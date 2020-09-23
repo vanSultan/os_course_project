@@ -1,0 +1,83 @@
+\documentclass[a4paper,12pt]{report} % размер бумаги устанавливаем А4, шрифт 12 пунктов
+\usepackage[T2A]{fontenc} % поддержка кириллицы в ЛаТеХ
+\usepackage[cp1251]{inputenc} % настройка кодировки
+\usepackage[english,russian]{babel} % Определение языков в документе
+\usepackage{amssymb,amsfonts,amsmath,mathtext,cite,enumerate,float} % подключаем нужные пакеты расширений
+\usepackage{indentfirst} % делать отступ в начале параграфа
+\usepackage{tabularx} % продвинутые таблицы
+% \usepackage{showkeys} % раскомментировать, чтобы в документе были видны ссылки на литературу, рисунки и таблицы
+\usepackage[labelsep=period]{caption} % заменить умолчальное разделение ':' на '.' в подписях к рисункам и таблицам
+\usepackage[onehalfspacing]{setspace} % "умное" расстояние между строк - установить 1.5 интервала от нормального
+\usepackage[final]{graphicx} % разрешить включение PostScript-графики
+\graphicspath{{images/}} % Относительный путь к каталогу с рисунками
+
+\usepackage{textcomp}
+\newcommand*{\No}{\textnumero}
+
+\makeatletter
+\bibliographystyle{unstr} % Стиль библиографических ссылок БибТеХа - нумеровать в порядке упоминания в тексте
+\renewcommand{\@biblabel}[1]{#1.} % Заменяем библиографию с квадратных скобок на точку в списке литературы
+\makeatother
+
+\def\labelitemi{--} % установка префикса немаркированного списка
+
+% Настройка геометрии
+\usepackage{geometry}
+\geometry{left=2cm}
+\geometry{right=1.5cm}
+\geometry{top=1cm}
+\geometry{bottom=2cm}
+
+% настройка листинга
+\usepackage{color} %% это для отображения цвета в коде
+\usepackage{xcolor}
+\usepackage{listings} %% собственно, это и есть пакет listings
+
+\usepackage{caption}
+\DeclareCaptionFont{white}{\color{white}} %% это сделает текст заголовка белым
+%% код ниже нарисует серую рамочку вокруг заголовка кода.
+\DeclareCaptionFormat{listing}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}}
+\captionsetup[lstlisting]{format=listing,labelfont=white,textfont=white}
+\lstset{ %
+language=C, % выбор языка для подсветки (здесь это С)
+basicstyle=\small\sffamily, % размер и начертание шрифта для подсветки кода
+numbers=left, % где поставить нумерацию строк (слева\справа)
+%numberstyle=\tiny, % размер шрифта для номеров строк
+stepnumber=1, % размер шага между двумя номерами строк
+numbersep=5pt, % как далеко отстоят номера строк от подсвечиваемого кода
+backgroundcolor=\color{white}, % цвет фона подсветки - используем \usepackage{color}
+showspaces=false, % показывать или нет пробелы специальными отступами
+showstringspaces=false, % показывать или нет пробелы в строках
+showtabs=false, % показывать или нет табуляцию в строках
+frame=single, % рисовать рамку вокруг кода
+tabsize=2, % размер табуляции по умолчанию равен 2 пробелам
+captionpos=t, % позиция заголовка вверху [t] или внизу [b]
+breaklines=true, % автоматически переносить строки (да\нет)
+breakatwhitespace=false, % переносить строки только если есть пробел
+escapeinside={\%*}{*)} % если нужно добавить комментарии в коде
+}
+
+% Меняем везде перечисления на цифра.цифра
+\renewcommand{\theenumi}{\arabic{enumi}}
+\renewcommand{\labelenumi}{\arabic{enumi}}
+\renewcommand{\theenumii}{\arabic{enumii}}
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}.}
+\renewcommand{\theenumiii}{\arabic{enumiii}}
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.}
+
+\renewcommand{\thesection}{\arabic{section}.}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}.}
+\renewcommand{\thesubsubsection}{\arabic{section}.\arabic{subsection}.\arabic{subsubsection}.}
+
+\begin{document}
+\def\figurename{Рисунок} % префикс к рисунками
+\input{CourseOS-Title}
+\tableofcontents
+\input{CourseOS-Intro}
+\input{CourseOS-Anal}
+\input{CourseOS-Constructor}
+\input{CourseOS-Techic}
+\input{CourseOS-Conclusion}
+\input{CourseOS-Biblio}
+\input{CourseOS-Appendix}
+\end{document}

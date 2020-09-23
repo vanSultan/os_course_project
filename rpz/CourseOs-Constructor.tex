@@ -1,0 +1,156 @@
+\newpage
+\section{Конструкторская часть}\label{sec:constuctor}
+
+\subsection{Идентификация устройства в Unix-подобной системе Raspbian}
+В Unix, результатом выполнения команды \textit{ls -l} в каталоге \textit{/dev}, является список специальных файлов устройств. Каждая строка отображенного списка начинается только с букв \textit{c} или \textit{d} (типы файлов). В данной строке есть два числа - старший и младший номера устройств.
+
+Старший идентифицирует драйвер, связанный с устройством. Например, \textit{/dev/null} и \textit{/dev/zero} управляют драйвером 1, а виртуальные консоли и последовательность терминалов, управляющих драйверами, идут под номером 4.
+Современные ядра Linux разрешают многим драйверам разделять старшие номера. Большинство старших номеров устроено по принципу: одно устройство - один старший номер.
+
+Младший номер отражает конкретное устройство. Пример - жесткий диск. Жесткий диск - устройство, у него будет один старший номер, но разделы будут иметь разные младшие номера \cite{razanova}.
+
+POSIX определяет существование \textit{dev\_t}, но не оговаривает формат полей этого типа. Тип \textit{dev\_t} определен в \textit{<linux/types.h>}.
+В версии ядра 2.6 это 32-х разрядного число, в котором 12 разрядов отведены для старшего номера и 20 для младшего.
+Некоторые номера зарезервированы для определенных устройств, другие динамически присваиваются драйверам устройств.
+Чтобы получить старшую или младшую части типа \textit{dev\_t}, используются макросы \textit{MAJOR(dev\_t dev)}, \textit{MINOR(dev\_t dev)}. Елси необходимо соединить, то используется макрос \textit{MKDEV(int major, int minor)} \cite{razanova}.
+
+\subsection{Разработка драйвера символьного устройства в Unix}
+В ядре, символьные устройства представлены структурой \textit{struct cdev}. Данный тип данных используется для регистрации устройства в системе. Большинство операций драйвера используют три важные структуры: \textit{struct file\_operations}, \textit{struct file} и \textit{struct inode}.
+
+\subsubsection{struct file\_operations}
+Драйверы символьных устройств получают конкретные системные вызовы, выполняемые пользователями через специальные файлы устройств. Следовательно, реализация драйвера символьного устройства означает реализацию системных вызовов, специфичных для файлов: \textit{open}, \textit{close}, \textit{read}, \textit{write}, \textit{lseek}, \textit{mmap} и т. д \cite{kernel_doc}. Эти операции описаны в полях структуры \textit{struct file\_operations} (Листинг \ref{lst:file_operations}).
+
+\begin{lstlisting}[language=C,label=lst:file_operations,caption=struct file\_operations]
+#include <linux/fs.h>
+
+struct file_operations {
+    struct module *owner;
+    loff_t (*llseek) (struct file *, loff_t, int);
+    ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);
+    ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
+    [...]
+    long (*unlocked_ioctl) (struct file *, unsigned int, unsigned long);
+    [...]
+    int (*open) (struct inode *, struct file *);
+    int (*flush) (struct file *, fl_owner_t id);
+    int (*release) (struct inode *, struct file *);
+    [...]
+\end{lstlisting}
+
+Можно заметить, что сигнатура функции отличается от системного вызова, который использует пользователь. Между пользователем и драйвером устройства находится операционная система, которая упрощает реализацию системных вызовов в драйвере устройства.
+
+\subsubsection{Регистрация и освобождение символьных устройств}
+Регистрация/освобождение устройства производится путем указания старшего и младшего номеров. Тип \textit{dev\_t} используется для хранения идентификаторов устройства (как основных, так и второстепенных) и может быть получен с помощью макроса \textit{MKDEV} \cite{kernel_doc}.
+
+Для статического назначения и выделения идентификаторов устройств используются функции \textit{register\_chrdev\_region} и \textit{unregister\_chrdev\_region}:
+
+\begin{lstlisting}
+#include <linux/fs.h>
+
+int register_chrdev_region(dev_t first, unsigned int count, char *name);
+void unregister_chrdev_region(dev_t first, unsigned int count);
+\end{lstlisting}
+Рекомендуется динамически назначать идентификаторы устройств используя функцию \\
+\textit{alloc\_chrdev\_region()}.
+
+	После присвоения идентификаторов необходимо проинициализировать символьное устройство (\textit{cdev\_init())}) и уведомить ядро \textit{(cdev\_add())}. Функция \textit{cdev\_add()} должна вызываться только после того, как устройство готово к приему вызовов. Удаление устройства выполняется с помощью функции \textit{cdev\_del()} \cite{madieu}.
+
+\begin{lstlisting}
+#include <linux/cdev.h>
+
+void cdev_init(struct cdev *cdev, struct file_operations *fops);
+int cdev_add(struct cdev *dev, dev_t num, unsigned int count);
+void cdev_del(struct cdev *dev);
+\end{lstlisting}
+
+\subsubsection{Автоматическое создание спциального файла устройства}
+Ранее, в ядре 2.4, автоматическое создание файлов устройств выполнялось системой, вызывая соответствующие API \textit{devfs}. Однако по мере развития операционной системы оказалось, что файлы устройств больше связаны с пользовательским пространством и, следовательно, именно там они должны рассматриваться.
+Основываясь на этой идее, теперь ядро заполняет только соответствующий класс устройства и информацию об устройстве в каталоге \textit{/sys} для рассматриваемого устройства. Затем пользовательское пространство должно интерпретировать его и принять соответствующие меры. В Linux демон \textit{udev} собирает эту информацию и создает файлы устройств.
+
+\textit{udev} может быть дополнительно настроен с помощью своих конфигурационных файлов для настройки имен файлов устройств, их прав, типов и т. д. Таким образом, соответствующие записи \textit{/sys} должны быть заполнены с помощью API-интерфейсов модели устройства Linux, объявленных в \textit{<linux/device.h>}. Остальное должно быть обработано \textit{udev} \cite{about_class}.
+
+Класс устройства создается следующим образом:
+\begin{lstlisting}
+struct class *cl = class_create(THIS_MODULE, " <device class name>");
+\end{lstlisting}
+
+Затем в классе заполнение информация об устройстве (<major, minor>):
+\begin{lstlisting}
+device_create(cl, NULL, first, NULL, "<device name format>", ...);
+\end{lstlisting}
+
+В данном примере, переменной \textit{first} является \textit{dev\_t} с соответствующим <major, minor>.
+
+Следующие обратные вызовы должны быть вызваны в противоположенном хронологическом порядке:
+\begin{lstlisting}
+device_destroy(cl, first);
+class_destroy(cl);
+\end{lstlisting}
+
+\subsection{Функциональная модель IDEF0}
+В соответствии с вышеизложенной информацией о системных вызовах, необходимых для создания драйвера символьного устройства, опишем функциональную модель работы драйвера (Рисунки \ref{ris:idef0_01_a0} - \ref{ris:idef0_04_a3}).
+
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{idef0/01_A-0.png}
+\caption{Входные/выходные сигналы}
+\label{ris:idef0_01_a0}
+\end{figure}
+
+Чтобы установить значение пикселя на экране, прежде необходимо загрузить драйвер символьного устройства в систему, а затем выгрузить его (Рисунок \ref{ris:idef0_02_a0}).
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{idef0/02_A0.png}
+\caption{Последовательность преобразований}
+\label{ris:idef0_02_a0}
+\end{figure}
+
+Рассмотрим подробнее блок A1. В процессе установки описываемого загружаемого модуля ядра выполнится ряд функций:
+\begin{enumerate}
+\item \textit{gpio\_request()} - запрос пина \textit{GPIO}.
+\item \textit{MKDEV()} - макрос, который возвращает переменную типа \textit{dev\_t}.
+\item \textit{alloc\_chrdev\_region()} - выделение диапазона номеров символьного устройства. Старший и младший номера будут выбраны автоматически.
+\item \textit{cdev\_init()} - инициализирует символьное устройство структурой \textit{struct fops}.
+\item \textit{cdev\_add()} - добавляет символьное устройство в систему. После добавления, устройство становится доступным для вызовов.
+\item \textit{class\_create()} - используется для создания указателя на структуру \textit{struct class}.
+\end{enumerate}
+
+В результате последовательного выполнения вышеуказанных функций в каталогах \textit{/sys/class} и \textit{/dev} создадутся файлы, соответствующие новому устройству.
+
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{idef0/03_A1.png}
+\caption{Установка модуля в систему}
+\label{ris:idef0_03_a1}
+\end{figure}
+
+Процесс выгрузки драйвера из системы является обратным к процессу загрузки. Таким образом, необходимо вызывать доплнения функций в обратной хронологической последовательсти описанных в предыдущем блоке.
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{idef0/04_A3.png}
+\caption{Выгрузка модуля из системы}
+\label{ris:idef0_04_a3}
+\end{figure}
+
+\subsection{Пользовательское приложение}
+В соответствии с заданием на курсовой проект необходимо реализовать консольное приложение, реализующее следующие функции:
+\begin{itemize}
+\item установка значения конкретного пикселя на экране;
+\item вывод пользовательского сообщения на указанную строку дисплея;
+\item очистка экрана.
+\end{itemize}
+
+Алгоритм работы данного приложения представлен на схеме ниже (Рисунки \ref{ris:scheme_application_main} - \ref{ris:scheme_application_sub})
+\begin{figure}[H]
+\center
+\includegraphics[width=\textwidth]{scheme_application_main.pdf}
+\caption{Схема пользовательского приложения}
+\label{ris:scheme_application_main}
+\end{figure}
+
+\begin{figure}[H]
+\center
+\includegraphics[width=0.9\textwidth]{scheme_application_sub.pdf}
+\caption{Обработка команд пользователя}
+\label{ris:scheme_application_sub}
+\end{figure}

@@ -1,0 +1,70 @@
+\newpage
+\section{Технологическая часть}\label{sec:technic}
+
+\subsection{Платформа разработки}
+Разработанное программное обеспечение реализовано на одноплатном компьютере Raspberry Pi 3 B+ с установленной операционной системой Raspbian типа GNU/Linux.
+
+Ядро Linux v4.19.75-v7+, архитектура мобильного процессора armv7l.
+
+\subsection{Средства реализации}
+Для сборки загружаемого модуля ядра используется компилятор \textit{gcc}.
+
+Поскольку необходимо реализовать программное обеспечение уровня ядра, то язык программирования \textit{C} выбран в качестве основного. Ввиду ограничености ресурсов на платформе разработки, для написания пользовательского приложения также выбран данный язык программирования.
+
+Весь процесс написания программного обеспечения осуществлялся на удаленной машине, посредством протокола \textit{ssh}, следовательно для удобства использовался текстовый редактор \textit{Vim}.
+
+\subsection{Модуль ядра}
+Реализованный драйвер символьного устройства собирается из следующих файлов:
+\begin{itemize}
+\item \textit{pcd8544.c} - файл реализации загружаемого модуля ядра;
+\item \textit{pcd8544.h} - заголовочный файл, содержит константные значения и необходимые зависимости.
+\end{itemize}
+
+Makefile для сборки модуля:
+\begin{lstlisting}
+CURRENT = $(shell uname -r)
+CURRENT = $(shell uname -r)
+KDIR = /lib/modules/$(CURRENT)/build
+PWD = $(shell pwd)
+TARGET = pcd8544
+obj-m   := $(TARGET).o
+default:
+        $(MAKE) -C $(KDIR) M=$(PWD) modules
+clean:
+        @rm -f *.o .*.cmd .*.flags *.mod.c *.order
+        @rm -f .*.*.cmd *~ *.*~ TODO.*
+        @rm -fR .tmp*
+        @rm -rf .tmp_versions
+disclean: clean
+        @rm *.ko *.symvers
+\end{lstlisting}
+
+\subsection{Демонстрация пользовательского приложения}
+Пользовательское приложение представляет собой консольный интерфейс, с возможность выбора пункта меню для выполнения необходимой задачи.
+
+Меню приложения:
+\begin{lstlisting}
+[1 - menu]> 1
+1 - Menu
+2 - Set pixel
+3 - Unset pixel
+4 - Write string
+5 - Clear screen
+0 - Exit
+[1 - menu]>
+\end{lstlisting}
+
+Установка/сброс значения пикселя:
+\begin{lstlisting}
+[1 - menu]> 2
+Input coordinates x, y: 19 11
+[1 - menu]>
+\end{lstlisting}
+
+Вывод сообщения пользователя на выбранную строку экрана:
+\begin{lstlisting}
+[1 - menu]> 4
+Input message[length<85]> input your message
+Input line number [1-6](next default)> 2
+[1 - menu]>
+\end{lstlisting}

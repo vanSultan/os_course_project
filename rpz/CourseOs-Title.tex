@@ -1,0 +1,84 @@
+% Титульный лист (ГОСТ Р 7.0.11-2001, 5.1)
+% титульный лист
+\newpage
+\begin{titlepage}
+\thispagestyle{empty}
+
+% {\large
+% \begin{center}
+% %\thesisOrganization
+% \textsl{Федеральное государственное бюджетное образовательное учреждение высшего профессионального образования \\* }
+% \vspace{2em}
+% \end{center}
+% }
+%\vspace{0pt plus4fill} %число перед fill = кратность относительно некоторого расстояния fill, кусками которого заполнены пустые места
+\IfFileExists{images/bmstu-logo.png}
+{
+\begin{minipage}[t]{0.13\textwidth}
+\centering\raisebox{\dimexpr \topskip-\height}{
+\includegraphics[scale=1,width=\textwidth]{bmstu-logo.png}}
+\label{fig1}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.87\textwidth}
+\begin{center}
+%\large \textsl{\textbf {\\ <<Московский государственный технический университет имени Н.Э. Баумана>> \\* (МГТУ им. Н.Э. Баумана) \\* }}
+{\textbf {\\ Министерство науки и высшего образования Российской Федерации \\
+Федеральное государственное бюджетное образовательное учреждение \\
+высшего образования \\
+«Московский государственный технический университет \\
+имени Н.Э. Баумана \\
+(национальный исследовательский университет)» \\
+(МГТУ им. Н.Э. Баумана)
+}}
+\end{center}
+\end{minipage}
+}
+
+\vspace{2em}
+
+\hrulefill
+
+\begin{center}
+\vspace{0pt plus2fill}
+{\large
+Факультет <<Информатика и системы управления>>\\
+Кафедра <<Программное обеспечение ЭВМ и информационные технологии>>
+}
+\end{center}
+
+{\Large
+\begin{center}
+\textbf{РАСЧЁТНО-ПОЯСНИТЕЛЬНАЯ ЗАПИСКА \\* к курсовому проекту по курсу: \\* } <<Операционные системы>> \\
+\end{center}
+}
+
+\vspace{0pt plus1fill}
+\begin{center}
+\textbf {\large %\MakeUppercase
+на тему: %\thesisTitle
+}
+
+\vspace{0pt plus2fill}
+\Large <<Символьный драйвер устройства PCD8544>>
+
+%\thesisDegree
+\end{center}
+
+\vspace{0pt plus4fill}
+
+\begin{center}
+%Научный руководитель:
+\newlength{\ML}
+\hspace{2.1cm}Студент группы ИУ7-73Б:\hspace{0.2cm}\underline{\hspace{\ML} \hspace{5.7cm}}\hspace{0.2cm}\underline{С.\,К. Жумабаев}\\
+\hspace{7.8cm} (Подпись, дата) \hspace{1.7cm} (Фамилия И.О.)\\
+\hspace{0.3cm}Руководитель курсового проекта:\hspace{0.2cm}\underline{\hspace{\ML} \hspace{5.7cm}}\hspace{0.2cm}\underline{Н.\,Ю. Рязанова}\\
+\hspace{7.8cm} (Подпись, дата) \hspace{1.7cm} (Фамилия И.О.)\\
+%\supervisorRegalia
+
+%\supervisorFio
+\end{center}
+%
+
+\vspace{0pt plus4fill}
+{\centeringМосква, 2019\par}
+\end{titlepage}
